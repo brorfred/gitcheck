@@ -37,6 +37,32 @@ def searchRepositories(dir=None):
     return repo
 
 
+def terselist(repolist, behind=False, ignoreBranch=r'^$'):
+    gsearch = re.compile(r'^.?([A-Z]) (.*)')
+  
+    uncommited = []
+    repo_ahead = []
+    for repo in repolist:
+        branch = getDefaultBranch(repo)
+        if re.match(ignoreBranch, branch):
+            continue
+        if len(getLocalFilesChange(repo)) > 0:
+            uncommited.append(os.path.basename(repo))
+            continue
+        for r in getRemoteRepositories(repo):
+            if len(getLocalToPush(repo, r, branch)) > 0:
+                repo_ahead.append(os.path.basename(repo))
+                continue
+    if len(uncommited) > 0:
+        print ("\033[91m=Local Changes=\033[0m")
+        #print ("-------------")
+        print "\n".join(uncommited)
+    if len(repo_ahead) > 0:
+        print ("\n=Repos Ahead=")
+        #print ("-------------")
+        print "\n".join(repo_ahead)
+
+
 # Check state of a git repository
 def checkRepository(rep, verbose=False, ignoreBranch=r'^$'):
     aitem = []
@@ -236,6 +262,9 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if shouldClear:
         print(tcolor.RESET)
 
+    terselist(repo)
+    return
+        
     for r in repo:
         if checkRepository(r, verbose, ignoreBranch):
             actionNeeded = True
